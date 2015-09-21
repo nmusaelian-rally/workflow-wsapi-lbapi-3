@@ -1,3 +1,4 @@
+
 Ext.define('CustomApp', {
     extend: 'Rally.app.App',
     componentCls: 'app',
@@ -123,7 +124,6 @@ Ext.define('CustomApp', {
         this.applyOpenedFiltersToStore();
     },
     makeStore:function(){
-        console.log('makeStore');
         var store = Ext.create('Rally.data.wsapi.Store',{
             model: 'Defect',
             fetch: ['ObjectID','FormattedID','ScheduleState','State','CreationDate','OpenedDate','ClosedDate','InProgressDate','AcceptedDate'],
@@ -158,7 +158,6 @@ Ext.define('CustomApp', {
     
     onOpenedStoreLoaded:function(){
         console.log('this.totalOpened', this.totalOpened.length);
-        //distribute:
         var n = this.intervals.length;
         _.each(this.totalOpened, function(record){
             for(var i=0; i<n;i++){
@@ -192,7 +191,6 @@ Ext.define('CustomApp', {
     
     onInProgressStoreLoaded:function(){
         console.log('this.totalInProgress', this.totalInProgress.length);
-        //distribute:
         var n = this.intervals.length;
         _.each(this.totalInProgress, function(record){
             for(var i=0; i<n;i++){
@@ -226,12 +224,113 @@ Ext.define('CustomApp', {
     
     onAcceptedStoreLoaded:function(){
         console.log('this.totalAccepted', this.totalAccepted.length);
-        //distribute:
         var n = this.intervals.length;
         _.each(this.totalAccepted, function(record){
             for(var i=0; i<n;i++){
                 if (record.AcceptedDate >= this.intervals[i].from && record.AcceptedDate < this.intervals[i].to) {
                     this.accepted[i].push(record);
+                }
+            }
+        },this);
+        
+        this.getDefectsAssignedToTeam();
+    },
+    
+    getDefectsAssignedToTeam:function(){
+        Ext.create('Rally.data.lookback.SnapshotStore', {
+            fetch: ['ObjectID','_ValidFrom','_ValidTo','FormattedID','Project',
+                    '_PreviousValues.Project','Tags','OpenedDate','InProgressDate','CreationDate'],
+            find: {'_TypeHierarchy':'Defect','_ProjectHierarchy':this.projectOid,
+            '_PreviousValues.Project':{'$ne':null},
+            '_ValidFrom':{'$gte':this.intervals[0].from,'$lt':this.intervals[this.intervals.length-1].to}},
+            hydrate: ['Project','_PreviousValues.Project'],
+            listeners: {
+                load: this.onSnapshotsLoaded, 
+                scope: this
+            }
+            }).load({
+                params : {
+                    compress : true,
+                    removeUnauthorizedSnapshots : true
+                }
+            });
+    },
+    
+    onSnapshotsLoaded:function(store, records){
+        var arrSize = 0;
+        _.each(records, function(record){
+            if (record.data.Tags.length > 0) { 
+                if(this.checkTagOid(record.data.Tags)){
+                    this.totalAssigned.push(this.makeSnapshotObject(record.data));
+                }
+            }
+            else{
+                this.unkownToHaveCVtag.push(record.data);
+            }
+        },this);
+        
+        arrSize = this.unkownToHaveCVtag.length;
+        if (arrSize > 0) {
+            this.counter = arrSize;
+            for(var i=this.counter-1; i>=0;i--){
+                this.verify(this.unkownToHaveCVtag[i].ObjectID);
+            }
+        }
+    },
+    checkTagOid:function(tags){
+        var isThere = _.some(tags, function(tag){
+            return tag === this.tagOid;
+        },this);
+        return isThere;
+    },
+    verify:function(oid){
+        Ext.create('Rally.data.lookback.SnapshotStore', {
+            fetch: ['ObjectID','FormattedID','Project','Tags','OpenedDate','CreationDate'],
+            find: {'ObjectID':oid,'_TypeHierarchy':'Defect','_ProjectHierarchy':this.projectOid,"__At":"current"},
+            hydrate: ['Project']
+        }).load({
+                callback: function(records, operation, success) {
+                    if (records[0] && records[0].data.Tags.length>0) {
+                        if(this.checkTagOid(records[0].data.Tags)){
+                            //console.log('found cv tag', records[0].data.ObjectID); //this order is indeterminate. I saw 0, 2, 1, and 1, 2, 0
+                            this.verifiedToHaveCVtag.push(records[0].data.ObjectID);
+                        }
+                        //else{console.log('no cv tag');}
+                    }
+                    //else{console.log('no tags');}
+                    
+                    this.counter--;
+                    if (this.counter === 0) {
+                        this.onAssignedDefectsLoaded();
+                    }
+                },
+                scope: this,
+                params : {
+                    compress : true,
+                    removeUnauthorizedSnapshots : true
+                }
+        }); 
+    },
+    onAssignedDefectsLoaded:function(){
+        _.mixin({
+            'findByValues': function(collection, property, values) {
+              return _.filter(collection, function(item) {
+                return _.contains(values, item[property]);
+              });
+            }
+          });
+        
+        var filtered = _.findByValues(this.unkownToHaveCVtag, 'ObjectID', this.verifiedToHaveCVtag);
+        
+        _.each(filtered, function(snapshot){
+            this.totalAssigned.push(this.makeSnapshotObject(snapshot));
+        },this);
+        
+        var n = this.intervals.length;
+        _.each(this.totalAssigned, function(snapshot){
+            for(var i=0; i<n;i++){
+                if (snapshot.AssignedDate >= this.intervals[i].from && snapshot.AssignedDate < this.intervals[i].to) {
+                    this.assigned[i].push(snapshot);
                 }
             }
         },this);
@@ -252,6 +351,10 @@ Ext.define('CustomApp', {
         _.each(this.accepted, function(acceptedPerMonth){
             console.log(acceptedPerMonth.length)
         });
+        console.log('assignedPerMonth---------------');
+        _.each(this.assigned, function(assignedPerMonth){
+            console.log(assignedPerMonth.length)
+        });
     },
     
     makeDefectObject:function(record){
@@ -266,6 +369,17 @@ Ext.define('CustomApp', {
             'ClosedDate': Rally.util.DateTime.toIsoString(record.get('ClosedDate'), false),
             'InProgressDate': Rally.util.DateTime.toIsoString(record.get('InProgressDate'), false),
             'AcceptedDate': Rally.util.DateTime.toIsoString(record.get('AcceptedDate'), false)   
+        };
+    },
+    makeSnapshotObject:function(record){
+        return{
+            'AssignedDate':record._ValidFrom,
+            'Project':record.Project.Name,
+            'ObjectID':record.ObjectID,
+            'OpenedDate':record.OpenedDate,
+            'InProgressDate':record.InProgressDate,
+            'CreationDate':record.CreationDate,
+            'FormattedID':record.FormattedID
         };
     },
     
