@@ -64,10 +64,6 @@ Ext.define('CustomApp', {
     },
     
     createInitialFilters:function(){
-        //var cvOpenedDateFilter = [];
-        //var cvInProgressDateFilter = [];
-        //var cvAcceptedDateFilter = [];
-        
         var tagFilter = Ext.create('Rally.data.wsapi.Filter', {
              property : 'Tags',
              operator: 'contains',
@@ -125,10 +121,6 @@ Ext.define('CustomApp', {
         
         this.makeStore();
         this.applyOpenedFiltersToStore();
-        //applyFiltersToStore(this.makeStore(),cvInProgressDateFilter, this.totalInProgress);
-        //applyFiltersToStore(this.makeStore(),cvAcceptedDateFilters, this.totalAccepted);
-        
-        
     },
     makeStore:function(){
         console.log('makeStore');
@@ -166,6 +158,16 @@ Ext.define('CustomApp', {
     
     onOpenedStoreLoaded:function(){
         console.log('this.totalOpened', this.totalOpened.length);
+        //distribute:
+        var n = this.intervals.length;
+        _.each(this.totalOpened, function(record){
+            for(var i=0; i<n;i++){
+                if (record.OpenedDate >= this.intervals[i].from && record.OpenedDate < this.intervals[i].to) {
+                    this.opened[i].push(record);
+                }
+            }
+        },this);
+        
         this.applyInProgressFiltersToStore();
     },
     
@@ -190,6 +192,16 @@ Ext.define('CustomApp', {
     
     onInProgressStoreLoaded:function(){
         console.log('this.totalInProgress', this.totalInProgress.length);
+        //distribute:
+        var n = this.intervals.length;
+        _.each(this.totalInProgress, function(record){
+            for(var i=0; i<n;i++){
+                if (record.InProgressDate >= this.intervals[i].from && record.InProgressDate < this.intervals[i].to) {
+                    this.inProgress[i].push(record);
+                }
+            }
+        },this);
+        
         this.applyAcceptedFiltersToStore();
     },
     
@@ -214,6 +226,32 @@ Ext.define('CustomApp', {
     
     onAcceptedStoreLoaded:function(){
         console.log('this.totalAccepted', this.totalAccepted.length);
+        //distribute:
+        var n = this.intervals.length;
+        _.each(this.totalAccepted, function(record){
+            for(var i=0; i<n;i++){
+                if (record.AcceptedDate >= this.intervals[i].from && record.AcceptedDate < this.intervals[i].to) {
+                    this.accepted[i].push(record);
+                }
+            }
+        },this);
+        
+        this.checkNumbers();
+    },
+    
+    checkNumbers:function(){
+         console.log('openedPerMonth---------------');
+        _.each(this.opened, function(openedPerMonth){
+            console.log(openedPerMonth.length)
+        });
+        console.log('inProgressPerMonth---------------');
+        _.each(this.inProgress, function(inProgressPerMonth){
+            console.log(inProgressPerMonth.length)
+        });
+        console.log('acceptedPerMonth---------------');
+        _.each(this.accepted, function(acceptedPerMonth){
+            console.log(acceptedPerMonth.length)
+        });
     },
     
     makeDefectObject:function(record){
