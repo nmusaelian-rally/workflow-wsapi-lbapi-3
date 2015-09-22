@@ -33,11 +33,11 @@ Ext.define('CustomApp', {
     accepted:[],
     data:[],
     launch: function() {
+        this._myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Please wait.This may take long depending on your data..."});
+        this._myMask.show();
         this.getDates();
         this.prepare();
         this.createInitialFilters();
-        this._myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Please wait.This may take long depending on your data..."});
-        this._myMask.show();
     },
     getDates:function(){
         var now = new Date();

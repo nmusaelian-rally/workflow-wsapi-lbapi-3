@@ -1,0 +1,3 @@
+.app .rally-grid .x-grid-row:nth-child(5n+5) .x-grid-cell {
+  border-bottom: double
+}
