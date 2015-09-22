@@ -320,12 +320,7 @@ Ext.define('CustomApp', {
         
        
         this.getCurrentInProgressDates();
-        var after = 0;
-        _.each(this.totalAssigned, function(assignedRecord){
-             if (assignedRecord.InProgressDate === '') {
-                after++;
-            }
-        });
+        this.getCurrentOpenedDates();
        
        var n = this.intervals.length;
         _.each(this.totalAssigned, function(snapshot){
@@ -350,8 +345,18 @@ Ext.define('CustomApp', {
         _.each(this.totalAssigned, function(assignedRecord){
             _.each(this.totalInProgress, function(inProgressRecord){
                 if (assignedRecord.ObjectID === inProgressRecord.ObjectID &&  assignedRecord.InProgressDate === '') {
-                    //console.log('inside loop');
                     assignedRecord.InProgressDate = inProgressRecord.InProgressDate;
+                } 
+            },this);
+        },this);
+    },
+    
+    getCurrentOpenedDates:function(){
+        _.each(this.totalAssigned, function(assignedRecord){
+            _.each(this.totalOpened, function(openedRecord){
+                if (assignedRecord.ObjectID === openedRecord.ObjectID &&  assignedRecord.OpenedDate === '') {
+                    //console.log('inside loop');
+                    assignedRecord.OpenedDate = openedRecord.OpenedDate;
                 } 
             },this);
         },this);
@@ -479,10 +484,12 @@ Ext.define('CustomApp', {
     makeGrid:function(){
         this._myMask.hide();
         this.add({
+            viewConfig: {
+                enableTextSelection: true
+            },
             xtype: 'rallygrid',
             itemId: 'dataGrid',
             showPagingToolbar: false,
-            editable: false,
             store: Ext.create('Rally.data.custom.Store', {
                 data: this.data
             }),
