@@ -5,7 +5,7 @@ Ext.define('CustomApp', {
     projectOid:23112780161,
     tagOid:21580021389,
     tagRef: '/tag/21580021389',
-    numberOfMonths: 5,
+    numberOfMonths: 6,
     intervals:[],
     store:null,
     cvOpenedDateFilter:[],
@@ -32,17 +32,19 @@ Ext.define('CustomApp', {
     },
     getDates:function(){
         var now = new Date();
-        var firstDayOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        //console.log('firstDayOfThisMonth',firstDayOfThisMonth); 
+        var startNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        console.log('startNextMonth',startNextMonth); 
         Date.prototype.calcFullMonths = function(monthOffset) {
-            var d = new Date(firstDayOfThisMonth); 
+            var d = new Date(startNextMonth); 
             d.setMonth(d.getMonth() - monthOffset);
             return d;
         };
         
         var howFarBack = (new Date()).calcFullMonths(this.numberOfMonths);
+        console.log('howFarBack',howFarBack); 
         for(var m=1; m <= this.numberOfMonths; m++){
             var firstDayOfNextMonth = new Date(howFarBack.getFullYear(), howFarBack.getMonth() + 1, 1);
+            console.log('firstDayOfNextMonth',firstDayOfNextMonth);
             this.intervals.push({
                 'from'  :   Rally.util.DateTime.format(howFarBack, 'Y-m-d'),          //howFarBack.toISOString(),           //or Rally.util.DateTime.format(howFarBack, 'Y-m-d'),
                 'to'    :   Rally.util.DateTime.format(firstDayOfNextMonth, 'Y-m-d'), //firstDayOfNextMonth.toISOString()   //Rally.util.DateTime.format(firstDayOfNextMonth, 'Y-m-d'),
@@ -233,7 +235,7 @@ Ext.define('CustomApp', {
                     '_PreviousValues.Project','Tags','OpenedDate','InProgressDate','CreationDate'],
             find: {'_TypeHierarchy':'Defect','_ProjectHierarchy':this.projectOid,
             '_PreviousValues.Project':{'$ne':null},
-            '_ValidFrom':{'$gte':this.intervals[0].from,'$lt':this.intervals[this.intervals.length-1].to}},
+            '_ValidFrom':{'$gte':_.first(this.intervals).from,'$lt':_.last(this.intervals).to}},
             hydrate: ['Project','_PreviousValues.Project'],
             listeners: {
                 load: this.onSnapshotsLoaded, 
@@ -448,11 +450,23 @@ Ext.define('CustomApp', {
         },this);
         
         var sum = 0;
-        _.each(chunksOfTime, function(t){
-            sum = parseFloat((sum + parseFloat(t)).toFixed(2));
-        });
-        mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
-        max = Math.max.apply(Math, chunksOfTime);
+        if (chunksOfTime.length > 0) {
+            _.each(chunksOfTime, function(t){
+                sum = parseFloat((sum + parseFloat(t)).toFixed(2));
+                });
+                mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
+                max = Math.max.apply(Math, chunksOfTime);
+        }
+        else{
+            mean = '--';
+            max = '--';
+        }
+        //_.each(chunksOfTime, function(t){
+        //    sum = parseFloat((sum + parseFloat(t)).toFixed(2));
+        //});
+        //mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
+        //max = Math.max.apply(Math, chunksOfTime);
+        
         //min = Math.min.apply(Math, chunksOfTime);  //they are all 0s
         
         
