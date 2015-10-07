@@ -463,7 +463,8 @@ Ext.define('CustomApp', {
             if (defect[start] === '') {
                 defect[start] = defect[alternativeStart];
             }
-            chunksOfTime.push(this.getDiffInHours(defect[start], defect[end]));    
+            //chunksOfTime.push(this.getDiffInHours(defect[start], defect[end]));
+            chunksOfTime.push(this.getDiffInDays(defect[start], defect[end]));
         },this);
         
         var sum = 0;
@@ -503,7 +504,15 @@ Ext.define('CustomApp', {
         var d1 = new Date(isoString1);
         var d2 = new Date(isoString2);
         //Math.abs() because in some cases defect's ScheduleState is set to In-Progress before its State is Open.     
-        return (Math.abs((d2 - d1))/3600000).toFixed(2);
+        return (Math.abs((d2 - d1))/3600000).toFixed(2); //milliseconds to hours
+        
+    },
+    
+    getDiffInDays:function(isoString1, isoString2){
+        var d1 = new Date(isoString1);
+        var d2 = new Date(isoString2);
+        //Math.abs() because in some cases defect's ScheduleState is set to In-Progress before its State is Open.     
+        return (Math.abs((d2 - d1))/86400000).toFixed(2); //milliseconds to days
         
     },
     sortData: function(){
