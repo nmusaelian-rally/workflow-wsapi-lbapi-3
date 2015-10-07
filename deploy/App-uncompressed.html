@@ -376,10 +376,11 @@ Ext.define('CustomApp', {
     collectRecords:function(){
         var n = this.intervals.length;
         for(var i=0; i<n; i++){
-           this.processDefectsPerInterval(this.opened[i],i, 'Opened');
-           this.processDefectsPerInterval(this.assigned[i],i,'Assigned');
-           this.processDefectsPerInterval(this.inProgress[i],i,'In-Progress'); 
-           this.processDefectsPerInterval(this.accepted[i],i,'Accepted');
+            this.processDefectsPerInterval(this.opened[i],i, 'Opened');
+            this.processDefectsPerInterval(this.assigned[i],i,'Assigned');
+            this.processDefectsPerInterval(this.inProgress[i],i,'In-Progress'); 
+            this.processDefectsPerInterval(this.accepted[i],i,'Accepted');
+            this.processDefectsPerInterval(this.accepted[i],i,'All');
         }
         this.sortData();
     },
@@ -446,11 +447,18 @@ Ext.define('CustomApp', {
             previousEvent = 'InProgress';
             order = 4;
         }
-       
-        else{
-            
+        else if (event === 'All') {
+            start = 'CreationDate';
+            end = 'AcceptedDate';
+            previousEvent = 'Created';
+            order = 5;
         }
-        
+       
+        else{} 
+
+        if (event === 'All') {
+            event = 'Accepted';
+        }
         _.each(defectsPerInterval, function(defect){
             if (defect[start] === '') {
                 defect[start] = defect[alternativeStart];
@@ -514,7 +522,8 @@ Ext.define('CustomApp', {
             itemId: 'dataGrid',
             showPagingToolbar: false,
             store: Ext.create('Rally.data.custom.Store', {
-                data: this.data
+                data: this.data,
+                pageSize: 30
             }),
             columnCfgs: [
                 {text: 'Interval',  dataIndex: 'interval'},
