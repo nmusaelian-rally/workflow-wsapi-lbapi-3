@@ -422,6 +422,10 @@ Ext.define('CustomApp', {
         var min = 0;
         var max = 0;
         var mean = 0;
+        var lowerGroup = [];
+        var upperGroup = [];
+        var lowerQuartile = 0;
+        var upperQuartile = 0;
         
         if (event === 'Opened') {
             start = 'CreationDate';
@@ -464,7 +468,7 @@ Ext.define('CustomApp', {
                 defect[start] = defect[alternativeStart];
             }
             //chunksOfTime.push(this.getDiffInHours(defect[start], defect[end]));
-            chunksOfTime.push(this.getDiffInDays(defect[start], defect[end]));
+            chunksOfTime.push(parseFloat(this.getDiffInDays(defect[start], defect[end])));
         },this);
         
         var sum = 0;
@@ -474,19 +478,24 @@ Ext.define('CustomApp', {
                 });
                 mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
                 max = Math.max.apply(Math, chunksOfTime);
+                min = Math.min.apply(Math, chunksOfTime);
+                
+                chunksOfTime.sort(function(a, b){return a-b;});
+                console.log('chunksOfTime',chunksOfTime);
+                lowerGroup = this.getLowerGroup(chunksOfTime);
+                console.log('lowerGroup',lowerGroup);
+                upperGroup = this.getUpperGroup(chunksOfTime);
+                console.log('upperGroup',upperGroup);
+                lowerQuartile = this.getMedian(lowerGroup);
+                upperQuartile = this.getMedian(upperGroup);
+                             
+                
         }
         else{
             mean = '--';
             max = '--';
+            min = '--';
         }
-        //_.each(chunksOfTime, function(t){
-        //    sum = parseFloat((sum + parseFloat(t)).toFixed(2));
-        //});
-        //mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
-        //max = Math.max.apply(Math, chunksOfTime);
-        
-        //min = Math.min.apply(Math, chunksOfTime);  //they are all 0s
-        
         
         this.data.push({
             'order'         :   order,
@@ -495,8 +504,10 @@ Ext.define('CustomApp', {
             'to'            :   event,
             'count'         :   chunksOfTime.length,
             'mean'          :   mean,
-            'max'           :   max
-            
+            'max'           :   max,
+            'min'           :   min,
+            'lowerQuartile' :   lowerQuartile,
+            'upperQuartile' :   upperQuartile
         });
     },
     
@@ -515,6 +526,45 @@ Ext.define('CustomApp', {
         return (Math.abs((d2 - d1))/86400000).toFixed(2); //milliseconds to days
         
     },
+    
+    getLowerGroup:function(arr){
+        var half = Math.floor(arr.length/2);
+        var lGroup = [];
+        if (arr.length % 2) { //odd, median will be included in both halves
+            lGroup = arr.slice(0, half+1); //slice extracts up to but not including end
+        }
+        else{//even, first middle value will be included in the first half
+            lGroup = arr.slice(0, half); //slice extracts from 0 to including arr[half-1], not including arr[half]
+        }
+        return lGroup;
+    },
+    
+    getUpperGroup:function(arr){
+        var half = Math.floor(arr.length/2);
+        var uGroup = [];
+        if (arr.length % 2) { //odd, median will be included in both halves
+            uGroup = arr.slice(half); //slice extracts to the end of the array
+        }
+        else{//even, second middle value will be included in the second half
+            uGroup = arr.slice(half); 
+        }
+        return uGroup;
+    },
+    
+    getMedian:function(arr){
+        var median = 0;
+        var half = Math.floor(arr.length/2);
+        var values = [];
+        if (arr.length % 2) { //odd
+            median = arr[half];
+        }
+        else{ //even
+            median = ((arr[half-1] + arr[half]) / 2.0).toFixed(2);
+            
+        }   
+        return median;
+    },
+    
     sortData: function(){
         this.data = _.sortBy(this.data, function(d) {
             return [d.order];
@@ -539,8 +589,11 @@ Ext.define('CustomApp', {
                 {text: 'From',  dataIndex: 'from'},
                 {text: 'To',  dataIndex: 'to'},
                 {text: 'Count',  dataIndex: 'count'},
-                {text: 'Time Between Events (Mean)',  dataIndex: 'mean'},
-                {text: 'Time Between Events (Max)',  dataIndex: 'max'} 
+                {text: 'Time Between Events: Mean',  dataIndex: 'mean'},
+                {text: 'Time Between Events: Max',  dataIndex: 'max'},
+                {text: 'Time Between Events: Min',  dataIndex: 'min'},
+                {text: 'Time Between Events: Upper Quartile',  dataIndex: 'upperQuartile'},
+                {text: 'Time Between Events: Lower Quartile',  dataIndex: 'lowerQuartile'}
             ]
         });
     }
