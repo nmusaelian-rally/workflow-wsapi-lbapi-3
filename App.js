@@ -140,7 +140,7 @@ Ext.define('CustomApp', {
     
     applyOpenedFiltersToStore:function(){
         var store = this.makeStore();
-        store.addFilter(this.cvOpenedDateFilter);
+        store.addFilter(this.cvOpenedDateFilter,false);
         store.load({
             scope: this,
             callback: function(records, operation) {
@@ -173,7 +173,7 @@ Ext.define('CustomApp', {
     
     applyInProgressFiltersToStore:function(){
         var store = this.makeStore();
-        store.addFilter(this.cvInProgressDateFilter);
+        store.addFilter(this.cvInProgressDateFilter,false);
         store.load({
             scope: this,
             callback: function(records, operation) {
@@ -198,7 +198,7 @@ Ext.define('CustomApp', {
     
     applyAcceptedFiltersToStore:function(){
         var store = this.makeStore();
-        store.addFilter(this.cvAcceptedDateFilter);
+        store.addFilter(this.cvAcceptedDateFilter,false);
         store.load({
             scope: this,
             callback: function(records, operation) {
@@ -466,19 +466,20 @@ Ext.define('CustomApp', {
         if (chunksOfTime.length > 0) {
             _.each(chunksOfTime, function(t){
                 sum = parseFloat((sum + parseFloat(t)).toFixed(2));
-                });
-                mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
-                max = Math.max.apply(Math, chunksOfTime);
-                min = Math.min.apply(Math, chunksOfTime);
+            });
+            max = Math.max.apply(Math, chunksOfTime);
+            min = Math.min.apply(Math, chunksOfTime);
+            mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
                 
-                chunksOfTime.sort(function(a, b){return a-b;});
-                console.log('chunksOfTime',chunksOfTime);
-                lowerGroup = this.getLowerGroup(chunksOfTime);
-                console.log('lowerGroup',lowerGroup);
-                upperGroup = this.getUpperGroup(chunksOfTime);
-                console.log('upperGroup',upperGroup);
-                lowerQuartile = this.getMedian(lowerGroup);
-                upperQuartile = this.getMedian(upperGroup);
+                
+            chunksOfTime.sort(function(a, b){return a-b;});
+            console.log('chunksOfTime',chunksOfTime);
+            lowerGroup = this.getLowerGroup(chunksOfTime);
+            console.log('lowerGroup',lowerGroup);
+            upperGroup = this.getUpperGroup(chunksOfTime);
+            console.log('upperGroup',upperGroup);
+            lowerQuartile = this.getMedian(lowerGroup);
+            upperQuartile = this.getMedian(upperGroup);
                              
                 
         }
