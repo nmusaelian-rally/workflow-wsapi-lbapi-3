@@ -412,7 +412,8 @@ Ext.define('CustomApp', {
         var chunksOfTime = []; //between events
         var min = 0;
         var max = 0;
-        var mean = 0;
+        var median=0;
+        //var mean = 0;
         var lowerGroup = [];
         var upperGroup = [];
         var lowerQuartile = 0;
@@ -469,10 +470,10 @@ Ext.define('CustomApp', {
             });
             max = Math.max.apply(Math, chunksOfTime);
             min = Math.min.apply(Math, chunksOfTime);
-            mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
-                
-                
+            //mean = parseFloat((sum/chunksOfTime.length).toFixed(2));
+                   
             chunksOfTime.sort(function(a, b){return a-b;});
+            median = this.getMedian(chunksOfTime);
             console.log('chunksOfTime',chunksOfTime);
             lowerGroup = this.getLowerGroup(chunksOfTime);
             console.log('lowerGroup',lowerGroup);
@@ -484,7 +485,8 @@ Ext.define('CustomApp', {
                 
         }
         else{
-            mean = '--';
+            //mean = '--';
+            median = '--';
             max = '--';
             min = '--';
         }
@@ -495,7 +497,8 @@ Ext.define('CustomApp', {
             'from'          :   previousEvent,
             'to'            :   event,
             'count'         :   chunksOfTime.length,
-            'mean'          :   mean,
+            'median'        :   median,
+            //'mean'        :   mean,
             'max'           :   max,
             'min'           :   min,
             'lowerQuartile' :   lowerQuartile,
@@ -546,14 +549,13 @@ Ext.define('CustomApp', {
     getMedian:function(arr){
         var median = 0;
         var half = Math.floor(arr.length/2);
-        var values = [];
         if (arr.length % 2) { //odd
             median = arr[half];
         }
         else{ //even
             median = ((arr[half-1] + arr[half]) / 2.0).toFixed(2);
             
-        }   
+        }
         return median;
     },
     
@@ -581,7 +583,8 @@ Ext.define('CustomApp', {
                 {text: 'From',  dataIndex: 'from'},
                 {text: 'To',  dataIndex: 'to'},
                 {text: 'Count',  dataIndex: 'count'},
-                {text: 'Time Between Events: Mean',  dataIndex: 'mean'},
+                //{text: 'Time Between Events: Mean',  dataIndex: 'mean'},
+                {text: 'Time Between Events: Median',  dataIndex: 'median'},
                 {text: 'Time Between Events: Max',  dataIndex: 'max'},
                 {text: 'Time Between Events: Min',  dataIndex: 'min'},
                 {text: 'Time Between Events: Upper Quartile',  dataIndex: 'upperQuartile'},
